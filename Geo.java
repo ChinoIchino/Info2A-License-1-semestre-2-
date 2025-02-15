@@ -1,3 +1,5 @@
+//everything in the main can be deleted without impacting the program, its only for testing purpose
+
 class Geo{
     private String display, coord1S, coord2S, rayon, milieu, distance;
     //There is a lot of prints, most of them are mainly to verify if the code work
@@ -116,28 +118,25 @@ class Geo{
 
     //set information about a segment
     void milieu_segment(){
-        String[] list_temp =  this.coord1S.split(",");
-        String[] list_temp2 = this.coord2S.split(",");
-        setMilieu((Double.parseDouble(list_temp[0]) + Double.parseDouble(list_temp2[0])) / 2, (Double.parseDouble(list_temp[1]) + Double.parseDouble(list_temp2[1])) / 2);
+        String[] list_temp = unpackingSegment();
+        setMilieu((Double.parseDouble(list_temp[0]) + Double.parseDouble(list_temp[2])) / 2, (Double.parseDouble(list_temp[1]) + Double.parseDouble(list_temp[3])) / 2);
     }
     void distance_segment(){
-        String[] list_temp =  getCoord1S().split(",");
-        String[] list_temp2 = getCoord2S().split(",");
-        setDistance(Math.sqrt(Math.pow(Double.parseDouble(list_temp2[0]) - Double.parseDouble(list_temp[0]), 2) + Math.pow(Double.parseDouble(list_temp2[1]) - Double.parseDouble(list_temp[1]), 2)));
-        //return getDistance();
+        String[] list_temp = unpackingSegment();
+        setDistance(Math.sqrt(Math.pow(Double.parseDouble(list_temp[2]) - Double.parseDouble(list_temp[0]), 2) + Math.pow(Double.parseDouble(list_temp[3]) - Double.parseDouble(list_temp[1]), 2)));
     }
-    boolean isInDisk(Geo point){
-        //Create 2 temporary segment
-        //this segment represent the distance between the center of the disk and the point in the input
-        Geo segmentPointTemp = new Geo(point.coord1S, point.coord2S, this.coord1S, this.coord2S);
-        //this segment represent the distance between the center of the disk to the border of the disk (setting coord1S and coord2S as strings was a BIG mistake)
-        Geo segmentDisqueTemp = new Geo(this.coord1S, this.coord2S, String.valueOf(Double.parseDouble(this.coord1S) + Double.parseDouble(this.rayon)), this.coord2S);
-        //set the distance into private String distance of both segments
-        segmentDisqueTemp.distance_segment();
-        segmentPointTemp.distance_segment();
+    //unpack a segment into a String list
+    String[] unpackingSegment(){
+        //create a string list of 4 elements
+        String[] list_temp = new String[4];
+        //split coord1S where there is a "," and put those elements into the first and second index
+        list_temp[0] = this.coord1S.split(",")[0];
+        list_temp[1] = this.coord1S.split(",")[1];
+        //same as above but with coord2S
+        list_temp[2] = this.coord2S.split(",")[0];
+        list_temp[3] = this.coord2S.split(",")[1];
+        return list_temp;
 
-        //see if the distance of segmentDisqueTemp is greater or equal than the distance of segmentPointTemp, and send a boolean
-        return Double.parseDouble(segmentDisqueTemp.distance) >= Double.parseDouble(segmentPointTemp.getDistance()); 
     }
 
     //for testing and display of values
@@ -171,6 +170,51 @@ class Geo{
     void verification(){
         System.out.println(this.rayon);
     }
+    boolean isInDisk(Geo point){
+        //Create 2 temporary segment
+        //this segment represent the distance between the center of the disk and the point in the input
+        Geo segmentPointTemp = new Geo(point.coord1S, point.coord2S, this.coord1S, this.coord2S);
+        //this segment represent the distance between the center of the disk to the border of the disk (setting coord1S and coord2S as strings was a BIG mistake)
+        Geo segmentDisqueTemp = new Geo(this.coord1S, this.coord2S, String.valueOf(Double.parseDouble(this.coord1S) + Double.parseDouble(this.rayon)), this.coord2S);
+        //set the distance into private String distance of both segments
+        segmentDisqueTemp.distance_segment();
+        segmentPointTemp.distance_segment();
+
+        //see if the distance of segmentDisqueTemp is greater or equal than the distance of segmentPointTemp, and send a boolean
+        return Double.parseDouble(segmentDisqueTemp.distance) >= Double.parseDouble(segmentPointTemp.getDistance()); 
+    }
+    //return a boolean if 2 shapes are equal (works on points, disks and segments)
+    boolean isEqual(Geo shape){
+        System.out.print("isEqual: ");
+        //the segment must be verified first because his rayon is null so it can create problems if i ask if a null value is equal to a string
+        //if rayon = null that mean its a segment        
+        if(this.rayon == null && shape.rayon == null){
+            //unpack values into a list to facilitate the return statement
+            String[] list_temp_this = this.unpackingSegment();
+            String[] list_temp_shape = shape.unpackingSegment(); 
+            //the return is big, i will probably try to compact it later
+            return 
+                (list_temp_this[0].equals(list_temp_shape[0]) && list_temp_this[1].equals(list_temp_shape[1]))
+                && (list_temp_this[2].equals(list_temp_shape[2]) && list_temp_this[3].equals(list_temp_shape[3]))
+                || (list_temp_this[0].equals(list_temp_shape[2]) && list_temp_this[1].equals(list_temp_shape[3]))
+                && (list_temp_this[2].equals(list_temp_shape[0]) && list_temp_this[3].equals(list_temp_shape[1]));
+        }
+
+        //point have a rayon = -1
+        else if(shape.rayon.equals("-1") && this.rayon.equals("-1")){
+            //return if both points are the same
+            return (this.coord1S.equals(shape.coord1S) && this.coord2S.equals(shape.coord2S)) || (this.coord1S.equals(shape.coord2S) && this.coord2S.equals(shape.coord1S));
+        }
+
+        //disk have a value greater than 0
+        else if(Double.parseDouble(shape.rayon) > 0 && Double.parseDouble(this.rayon) > 0){
+            return 
+                (this.coord1S.equals(shape.coord1S) && this.coord2S.equals(shape.coord2S) && this.rayon.equals(shape.rayon)) 
+                || (this.coord2S.equals(shape.coord1S) && this.coord1S.equals(shape.coord2S) && this.rayon.equals(shape.rayon));
+        }
+        return false;
+    }
+
     //gonna keep that function in case ill need to decompile the steps of a function
     void debugger(Geo segment){
         String[] list_temp =  getCoord1S().split(",");
@@ -188,68 +232,11 @@ class Geo{
 
 
     public static void main(String []args){
-
-
         Geo p1 = new Geo("1","2");
-        Geo p2 = new Geo("4.5", "3.8"); //P2=(4.5,3.8)
-        Geo p3 = new Geo("3.5", "5.5");
+        //Geo p2 = new Geo("4.5", "3.8"); //P2=(4.5,3.8)
+        Geo p3 = new Geo("3.5", "2.5");
 
-        System.out.println("Segment1");
-        Geo segment1 = new Geo(p1, p2);
+        Geo segment1 = new Geo(p1, p3);
         segment1.all_segment();
-
-        Geo disk = new Geo("2", "2", "3");
-        System.out.println(disk.isInDisk(p1));
-        System.out.println(disk.isInDisk(p2));
-        System.out.println(disk.isInDisk(p3));
-
-        
-
-        /*
-        //all are for testing purpose
-        System.out.println("Point1");
-        Geo point1 = new Geo("2.3", "5.1");
-        point1.display();
-        point1.verification();
-        point1.saut_ligne();
-
-        System.out.println("Clonage Point2 a base de point1");
-        Geo point2 = new Geo(point1);
-        point2.display();
-        point2.verification();
-        point1.saut_ligne();
-
-        System.out.println("Disque 1");
-        Geo disque1 = new Geo("4.5", "9.5", "3");
-        disque1.display();
-        disque1.verification();
-        point1.saut_ligne();
-
-        System.out.println("Disque 2 a base de point1 et rayon");
-        Geo disque2 = new Geo(point1, "7");
-        disque2.display();
-        disque2.verification();
-        point1.saut_ligne();
-
-        System.out.println("Clonage Disque 3 a base de Disque 2");
-        Geo disque3 = new Geo(disque2);
-        disque3.display();
-        disque3.verification();
-        point1.saut_ligne();
-
-        System.out.println("Segment1");
-        Geo segment1 = new Geo(point1, point2);
-        //marche pas :(
-        //segment1.all_segment(); 
-        segment1.display();
-        segment1.display_segment_information();
-
-        System.out.println("Cercle info");
-        disque1.all_disque();
-
-        System.out.println("Test de TP");
-        Geo disque_test1 = new Geo("3.5","2.5", "0.5");
-        disque_test1.all_disque();
-        */
     }
 }
